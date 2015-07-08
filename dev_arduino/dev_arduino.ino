@@ -19,9 +19,9 @@ EthernetServer server(80);  // create a server at port 80
 String HTTP_req;          // stores the HTTP request
 
 // data for the web client roles
-char root_addr[] = "192.168.1.2";
+char root_addr[] = "192.168.1.3";
 int server_port = 8000;
-int secretkey = 2;
+int secretkey = 1;
 
 // global dynamic data
 int row = 1;
@@ -115,13 +115,13 @@ void SwitchOn(EthernetClient cl)
       Serial.println(col);
       Serial.println(row);
       digitalWrite(1+row, LOW);
-      digitalWrite(4+col, LOW);
+      digitalWrite(5+col, LOW);
     }
 }
 
 void SwitchOff() {
   digitalWrite(1+row, HIGH);
-  digitalWrite(4+col, HIGH);
+  digitalWrite(5+col, HIGH);
 }
 
 void makeRequest(char* tail) {

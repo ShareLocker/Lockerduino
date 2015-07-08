@@ -28,7 +28,7 @@ void loop()
   if (col > 2) {
     col = 1;
     row = row + 1;
-    if (row > 4) {
+    if (row > 1) {
       row = 1;
     }
   }
@@ -39,9 +39,9 @@ void ElementOn(int row, int col) {
       digitalWrite(thisPin, HIGH);
     }
     digitalWrite(1+row, LOW);
-    digitalWrite(4+col, LOW);
+    digitalWrite(5+col, LOW);
 }
 void ElementOff(int row, int col) {
     digitalWrite(1+row, HIGH);
-    digitalWrite(4+col, HIGH);
+    digitalWrite(5+col, HIGH);
 }
