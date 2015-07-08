@@ -25,10 +25,10 @@ void loop()
   Serial.print(" col ");
   Serial.println(col);
   col = col + 1;
-  if (col > 3) {
+  if (col > 2) {
     col = 1;
     row = row + 1;
-    if (row > 3) {
+    if (row > 4) {
       row = 1;
     }
   }

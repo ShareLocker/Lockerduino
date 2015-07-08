@@ -23,7 +23,11 @@ byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 // if you don't want to use DNS (and reduce your sketch size)
 // use the numeric IP instead of the name for the server:
 //IPAddress server(74,125,232,128);  // numeric IP for Google (no DNS)
-char server[] = "http://192.168.1.3:8000/";    // name address for Google (using DNS)
+//char server[] = "192.168.1.2:8000/hubs/connected/2";    // name address for server
+char root_addr[] = "192.168.1.2";
+int server_port = 8000;
+int secretkey = 2;
+//IPAddress server_ip(192,168,1,2);
 
 // Set the static IP address to use if the DHCP fails to assign
 IPAddress ip(192, 168, 0, 177);
@@ -36,52 +40,55 @@ EthernetClient client;
 void setup() {
   // Open serial communications and wait for port to open:
   Serial.begin(9600);
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for Leonardo only
-  }
 
   // start the Ethernet connection:
   if (Ethernet.begin(mac) == 0) {
     Serial.println("Failed to configure Ethernet using DHCP");
-    // no point in carrying on, so do nothing forevermore:
-    // try to congifure using IP address instead of DHCP:
-    Ethernet.begin(mac, ip);
+    Ethernet.begin(mac, ip);  // try to congifure using IP address instead of DHCP:
   }
-  // give the Ethernet shield a second to initialize:
-  delay(1000);
-  Serial.println("connecting...");
-
-  // if you get a connection, report back via serial:
-  if (client.connect(server, 80)) {
-    Serial.println("connected");
-    // Make a HTTP request:
-    client.println("GET / HTTP/1.1");
-    client.println("Connection: close");
-    client.println();
-  }
-  else {
-    // kf you didn't get a connection to the server:
-    Serial.println("connection failed");
-  }
+  delay(1000);  // give the Ethernet shield a second to initialize:
 }
 
 void loop()
 {
-  // if there are incoming bytes available
-  // from the server, read them and print them:
-  if (client.available()) {
-    char c = client.read();
-    Serial.print(c);
-  }
 
-  // if the server's disconnected, stop the client:
-  if (!client.connected()) {
-    Serial.println();
-    Serial.println("disconnecting.");
-    client.stop();
+  char tail_addr[] = "/hubs/connected/";
+  makeRequest(tail_addr);
 
-    // do nothing forevermore:
-    while (true);
-  }
+  // do nothing forevermore:
+  while (true);
+  
 }
 
+void makeRequest(char* tail) {
+
+  Serial.println("connecting...");
+
+  if (client.connect(root_addr, server_port)) { // could use server_ip
+    Serial.println("connected");
+    client.print("GET ");  // ex. "GET /hubs/connected/2 HTTP/1.1"
+    client.print(tail);
+    client.print(secretkey);
+    client.println(" HTTP/1.1");
+    client.println("Connection: close");
+    client.println();
+  }
+  else {
+    Serial.println("connection failed");
+  }
+  
+  while (true) {
+    if (client.available()) { // read incoming byes from server
+      char c = client.read();
+      Serial.print(c);
+    }
+
+    if (!client.connected()) { // stop client if server disconnected
+      Serial.println();
+      Serial.println("disconnecting.");
+      client.stop();
+      break;
+    }
+  }
+
+}
