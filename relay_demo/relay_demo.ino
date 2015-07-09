@@ -28,7 +28,7 @@ void loop()
   if (col > 2) {
     col = 1;
     row = row + 1;
-    if (row > 1) {
+    if (row > 4) {
       row = 1;
     }
   }

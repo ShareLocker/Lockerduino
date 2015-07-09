@@ -19,13 +19,16 @@ EthernetServer server(80);  // create a server at port 80
 String HTTP_req;          // stores the HTTP request
 
 // data for the web client roles
-char root_addr[] = "192.168.1.3";
+char root_addr[] = "192.168.1.2";
 int server_port = 8000;
 int secretkey = 1;
 
 // global dynamic data
 int row = 1;
 int col = 1;
+int poll_freq = 5000;
+int found_message = 0;
+int era = 2;
 
 void setup()
 {
@@ -52,51 +55,66 @@ void setup()
 
 void loop()
 {
-    EthernetClient client = server.available();  // try to get client
+  EthernetClient client = server.available();  // try to get client
 
-    if (client) {  // got client?
-        boolean currentLineIsBlank = true;
-        while (client.connected()) {
-            if (client.available()) {   // client data available to read
-                char c = client.read(); // read 1 byte (character) from client
-                HTTP_req += c;  // save the HTTP request 1 char at a time
-                // last line of client request is blank and ends with \n
-                // respond to client only after last line received
-                if (c == '\n' && currentLineIsBlank) {
-                    // send a standard http response header
-                    client.println("HTTP/1.1 200 OK");
-                    client.println("Content-Type: text/html");
-                    client.println("Connection: close");
-                    client.println();
-                    // send web page
-                    client.println("<!DOCTYPE html>");
-                    client.println("<html>control is through URL parameters");
-                    client.println("</html>");
-                    Serial.println(HTTP_req);
-                    SwitchOn(client);
-                    HTTP_req = "";    // finished with request, empty string
-                    break;
-                }
-                // every line of text received from the client ends with \r\n
-                if (c == '\n') {
-                    // last character on line of received text
-                    // starting new line with next character read
-                    currentLineIsBlank = true;
-                } 
-                else if (c != '\r') {
-                    // a text character was received from client
-                    currentLineIsBlank = false;
-                }
-            } // end if (client.available())
-        } // end while (client.connected())
-        delay(1);      // give the web browser time to receive the data
-        client.stop(); // close the connection
-        delay(3000);
-        SwitchOff();
-        // give signal that locker is closed again
-        char tail_addr[] = "/hubs/finished/";
-        makeRequest(tail_addr);
-    } // end if (client)
+  if (client) {  // got client?
+    boolean currentLineIsBlank = true;
+    while (client.connected()) {
+      if (client.available()) {   // client data available to read
+        char c = client.read(); // read 1 byte (character) from client
+        HTTP_req += c;  // save the HTTP request 1 char at a time
+        // last line of client request is blank and ends with \n
+        // respond to client only after last line received
+        if (c == '\n' && currentLineIsBlank) {
+          // send a standard http response header
+          client.println("HTTP/1.1 200 OK");
+          client.println("Content-Type: text/html");
+          client.println("Connection: close");
+          client.println();
+          // send web page
+          client.println("<!DOCTYPE html>");
+          client.println("<html>control is through URL parameters");
+          client.println("</html>");
+          Serial.println(HTTP_req);
+          SwitchOn(client);
+          HTTP_req = "";    // finished with request, empty string
+          break;
+        }
+        // every line of text received from the client ends with \r\n
+        if (c == '\n') {
+          // last character on line of received text
+          // starting new line with next character read
+          currentLineIsBlank = true;
+        } 
+        else if (c != '\r') {
+          // a text character was received from client
+          currentLineIsBlank = false;
+        }
+      } // end if (client.available())
+    } // end while (client.connected())
+    delay(1);      // give the web browser time to receive the data
+    client.stop(); // close the connection
+    delay(3000);
+    SwitchOff();
+    // give signal that locker is closed again
+    char tail_addr[] = "/hubs/finished/";
+    makeRequest(tail_addr);
+  } // end if (client)
+  // code to regularily poll server, if we are doing that
+  int time = millis();
+  if (time / poll_freq > era) {
+    Serial.println(time);
+    era = time / poll_freq;
+    char tail_addr[] = "/hubs/poll/";
+    makeRequest(tail_addr);
+    if (found_message == 1) {
+      found_message = 0;
+      Serial.println("found message");
+      JustSwitchOn();
+      delay(3000); // method to open with polling
+      SwitchOff();
+    }
+  }
 }
 
 void SwitchOn(EthernetClient cl)
@@ -114,9 +132,13 @@ void SwitchOn(EthernetClient cl)
       col = val1.toInt();
       Serial.println(col);
       Serial.println(row);
-      digitalWrite(1+row, LOW);
-      digitalWrite(5+col, LOW);
+      JustSwitchOn();
     }
+}
+
+void JustSwitchOn() {
+  digitalWrite(1+row, LOW);
+  digitalWrite(5+col, LOW);
 }
 
 void SwitchOff() {
@@ -141,9 +163,20 @@ void makeRequest(char* tail) {
     Serial.println("connection failed");
   }
   
+  int start_stream = 0;
   while (true) {
     if (client.available()) { // read incoming byes from server
       char c = client.read();
+      if (start_stream == 1) {
+        col = c - '0'; // this convert char into into
+        start_stream = 2;
+      } else if (start_stream == 2) {
+        row = c - '0';
+        found_message = 1;
+        start_stream = 3;
+      } else if (c == '?') {
+        start_stream = 1;
+      }
       Serial.print(c);
     }
 
