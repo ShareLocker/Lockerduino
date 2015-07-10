@@ -26,9 +26,10 @@ int secretkey = 1;
 // global dynamic data
 int row = 1;
 int col = 1;
-int poll_freq = 5000;
+unsigned int poll_freq = 5000;
 int found_message = 0;
-int era = 2;
+unsigned char ctr = 0;
+unsigned char prevctr = 0;
 
 void setup()
 {
@@ -101,10 +102,10 @@ void loop()
     makeRequest(tail_addr);
   } // end if (client)
   // code to regularily poll server, if we are doing that
-  int time = millis();
-  if (time / poll_freq > era) {
-    Serial.println(time);
-    era = time / poll_freq;
+  ctr = millis();
+  if ((unsigned char)(ctr - prevctr) >= poll_freq) {
+    prevctr = ctr;
+    Serial.println(ctr);
     char tail_addr[] = "/hubs/poll/";
     makeRequest(tail_addr);
     if (found_message == 1) {
