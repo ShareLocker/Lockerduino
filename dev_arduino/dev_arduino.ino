@@ -26,6 +26,8 @@ int secretkey = 1;
 // global dynamic data
 int row = 1;
 int col = 1;
+int Nrow = 4;
+int Ncol = 2;
 unsigned int poll_freq = 5000;
 int found_message = 0;
 unsigned char ctr = 0;
@@ -139,12 +141,12 @@ void SwitchOn(EthernetClient cl)
 
 void JustSwitchOn() {
   digitalWrite(1+row, LOW);
-  digitalWrite(5+col, LOW);
+  digitalWrite(1+Nrow+col, LOW);
 }
 
 void SwitchOff() {
   digitalWrite(1+row, HIGH);
-  digitalWrite(5+col, HIGH);
+  digitalWrite(1+Nrow+col, HIGH);
 }
 
 void makeRequest(char* tail) {
